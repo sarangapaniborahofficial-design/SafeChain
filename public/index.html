@@ -183,8 +183,11 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="toggleNightMode()" class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-colors shadow-sm">
+                <button onclick="toggleNightMode()" class="w-10 h-10 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-colors shadow-sm" title="Toggle Night Mode">
                     <i id="night-icon" class="fa-solid fa-moon"></i>
+                </button>
+                <button onclick="shareLocation()" class="w-10 h-10 rounded-full bg-green-50 text-safe hover:bg-green-100 flex items-center justify-center transition-colors shadow-sm" title="Share Live Location">
+                    <i class="fa-solid fa-share-nodes"></i>
                 </button>
                 <button onclick="toggleSOSModal()" class="bg-alert text-white px-5 py-2.5 rounded-full text-[13px] font-bold shadow-[0_4px_12px_rgba(239,68,68,0.4)] hover:bg-red-600 active:scale-95 transition-all">
                     <i class="fa-solid fa-bell mr-1"></i> SOS
@@ -387,18 +390,26 @@
 
         <!-- SOS Modal -->
         <div id="sos-modal" class="hidden absolute inset-0 z-[200] bg-dark/80 backdrop-blur-sm flex items-center justify-center px-5 transition-opacity opacity-0">
-            <div class="bg-white w-full rounded-[32px] p-8 text-center transform scale-95 transition-transform duration-300 shadow-2xl relative">
-                <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 relative">
+            <div class="bg-white w-full rounded-[32px] p-6 text-center transform scale-95 transition-transform duration-300 shadow-2xl relative">
+                <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3 relative">
                     <div class="absolute inset-0 bg-red-100 rounded-full animate-ping"></div>
-                    <i class="fa-solid fa-satellite-dish text-[32px] text-alert"></i>
+                    <i class="fa-solid fa-satellite-dish text-[24px] text-alert"></i>
                 </div>
-                <h2 class="text-[24px] font-bold text-dark mb-2 leading-tight">Emergency<br>Dispatched</h2>
-                <p class="text-[14px] text-gray-500 mb-8 font-medium leading-relaxed">
-                    Live location sent to <b class="text-dark">AEC Outpost</b> and trusted contacts.
+                <h2 class="text-[22px] font-black text-dark mb-1 leading-tight">EMERGENCY SOS</h2>
+                <p class="text-[13px] text-gray-500 mb-6 font-medium leading-relaxed px-2">
+                    Dispatch your precise live location and route to authorities or trusted contacts immediately.
                 </p>
-                <button onclick="toggleSOSModal()" class="w-full bg-dark text-white font-bold py-4 rounded-2xl active:scale-95 transition-all text-[15px]">
-                    Cancel Alert (10s)
-                </button>
+                <div class="space-y-3">
+                    <button onclick="triggerBackendSOS('police')" class="w-full bg-alert text-white font-bold py-3.5 rounded-xl shadow-[0_4px_12px_rgba(239,68,68,0.4)] hover:bg-red-600 active:scale-95 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-building-shield"></i> Alert Police Outpost
+                    </button>
+                    <button onclick="triggerBackendSOS('contacts')" class="w-full bg-orange-500 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_12px_rgba(249,115,22,0.4)] hover:bg-orange-600 active:scale-95 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-users"></i> Alert Trusted Contacts
+                    </button>
+                    <button onclick="toggleSOSModal()" class="w-full bg-gray-100 text-gray-600 font-bold py-3.5 rounded-xl hover:bg-gray-200 active:scale-95 transition-all mt-2">
+                        Cancel False Alarm
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -574,8 +585,14 @@
             document.getElementById('safe-score-val').textContent = `${safeScore}/100`;
             document.getElementById('short-score-val').textContent = `${shortScore}/100`;
 
+            // Force the shortcut to deviate through an isolated "unlit bypass" so it doesn't overlap the safe route
+            let shortcutWaypoints = [];
+            if (waypoints.length > 0) {
+                shortcutWaypoints = [[91.6585, 26.1395]]; // Isolated danger waypoint
+            }
+
             // Then fetch shortcut in background
-            const shortcutRouteData = await fetchRealRoute(currentStart, endCoord, [], '#ef4444', '8, 8', 5); // Alert Red
+            const shortcutRouteData = await fetchRealRoute(currentStart, endCoord, shortcutWaypoints, '#ef4444', '8, 8', 5); // Alert Red
             shortcutRouteLayer = shortcutRouteData.layer;
             shortcutRouteLayer.addTo(map);
             shortcutRouteLayer.setStyle({ opacity: 0.25 }); // Dim inactive
@@ -806,19 +823,45 @@
         }
 
         // Trigger SOS
-        async function triggerBackendSOS() {
+        async function triggerBackendSOS(target = 'police') {
             try {
-                // Send the actual live coordinates (if location was granted, otherwise ASTU defaults)
+                // UI feedback
+                const btn = event.currentTarget;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Dispatched!`;
+                btn.classList.replace('bg-alert', 'bg-dark');
+                btn.classList.replace('bg-orange-500', 'bg-dark');
+                
                 await fetch('/api/sos', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         userId: 'STUDENT_8842', 
                         emergencyLevel: 'HIGH', 
+                        target: target,
                         location: { lat: currentStart[1], lng: currentStart[0] } 
                     })
                 });
+
+                setTimeout(() => { btn.innerHTML = originalText; toggleSOSModal(); }, 2000);
             } catch (err) { console.error('Failed to dispatch SOS', err); }
+        }
+
+        // Share Location Feature
+        function shareLocation() {
+            const locStr = `Lat: ${currentStart[1].toFixed(4)}, Lng: ${currentStart[0].toFixed(4)}`;
+            const textToShare = `Track my live location on ASTU NavShield safely. I am currently at ${locStr}.`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'ASTU NavShield Live Tracking',
+                    text: textToShare,
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(textToShare + " " + window.location.href);
+                alert("Live tracking link copied to clipboard!");
+            }
         }
 
         function toggleSOSModal() {
@@ -831,7 +874,6 @@
                 modal.classList.remove('opacity-0');
                 content.classList.remove('scale-95');
                 content.classList.add('scale-100');
-                triggerBackendSOS();
             } else {
                 modal.classList.add('opacity-0');
                 content.classList.remove('scale-100');
