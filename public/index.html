@@ -417,26 +417,27 @@
             maxZoom: 20
         }).addTo(map);
 
-        // Map Markers
+        // Map Markers with Radar Pulse for Anchors
         const startIcon = L.divIcon({ className: 'custom-icon', html: '<div class="marker-start"><i class="fa-solid fa-location-dot"></i></div>', iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -17] });
         const destIcon = L.divIcon({ className: 'custom-icon', html: '<div class="glowing-marker marker-alert"></div>', iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -11] });
-        const policeIcon = L.divIcon({ className: 'custom-icon', html: '<div class="glowing-marker marker-brand"></div>', iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -11] });
-        const marketIcon = L.divIcon({ className: 'custom-icon', html: '<div class="glowing-marker marker-safe"></div>', iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -11] });
+        const policeIcon = L.divIcon({ className: 'custom-icon', html: '<div class="radar-ring safe"></div><div class="glowing-marker marker-brand"></div>', iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -11] });
+        const marketIcon = L.divIcon({ className: 'custom-icon', html: '<div class="radar-ring safe"></div><div class="glowing-marker marker-safe"></div>', iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -11] });
 
         // Coords
         const astu = [91.6591, 26.1380];
-        const police = [91.6598, 26.1425]; // Accurate AEC Police Outpost
-        const market = [91.6605, 26.1445]; // Accurate AEC Market
-        const pg = [91.6610, 26.1460];
+        const police = [91.6575, 26.1390]; // Placed smoothly on route to PG
+        const market = [91.6565, 26.1398]; // Placed smoothly on route to PG
+        const pg = [91.65536, 26.140224]; // EXACT from user screenshot!
 
         // Place Markers
         const startMarker = L.marker([astu[1], astu[0]], { icon: startIcon }).addTo(map).bindPopup("Start: ASTU");
         const policeMarker = L.marker([police[1], police[0]], { icon: policeIcon }).addTo(map).bindPopup("AEC Police Outpost");
         const marketMarker = L.marker([market[1], market[0]], { icon: marketIcon }).addTo(map).bindPopup("Daily Market");
-        let destMarker = L.marker([pg[1], pg[0]], { icon: destIcon }).addTo(map).bindPopup("Rupalaya PG");
+        let destMarker = L.marker([pg[1], pg[0]], { icon: destIcon }).addTo(map).bindPopup("Rupalaya Girl's PG");
 
         let currentStart = astu; // Default start location
         let safeRouteLayer, shortcutRouteLayer;
+        let routeCoordinates = []; // Store for navigation demo
 
         // Fetch routing data from our Node.js Backend API
         async function fetchRealRoute(start, end, waypoints, color, dashArray = null, weight = 6) {
@@ -458,14 +459,14 @@
                     
                     const latlngs = geojson.coordinates.map(coord => [coord[1], coord[0]]);
                     const layer = L.polyline(latlngs, { color: color, weight: weight, opacity: 1, lineJoin: 'round', lineCap: 'round', dashArray: dashArray });
-                    return { layer, distanceKm, durationMin };
+                    return { layer, distanceKm, durationMin, latlngs };
                 }
             } catch (err) {
                 console.error("Backend routing failed. Drawing fallback straight lines.", err);
             }
             const fallbackPoints = [start, ...waypoints, end].map(coord => [coord[1], coord[0]]);
             const fallbackLayer = L.polyline(fallbackPoints, { color: color, weight: weight, opacity: 1, lineJoin: 'round', dashArray: dashArray });
-            return { layer: fallbackLayer, distanceKm: '--', durationMin: '--' };
+            return { layer: fallbackLayer, distanceKm: '--', durationMin: '--', latlngs: fallbackPoints };
         }
 
         // Toggle Bottom Sheet
@@ -473,17 +474,60 @@
         function toggleBottomSheet() {
             const details = document.getElementById('bottom-sheet-details');
             const text = document.getElementById('sheet-toggle-text');
+            const navBtn = document.getElementById('btn-start-nav');
             sheetExpanded = !sheetExpanded;
             
             if (sheetExpanded) {
                 details.classList.remove('h-0', 'overflow-hidden');
                 details.classList.add('h-[200px]', 'overflow-y-auto', 'no-scrollbar');
+                navBtn.classList.remove('hidden');
                 text.textContent = 'TAP TO COLLAPSE';
             } else {
                 details.classList.remove('h-[200px]', 'overflow-y-auto', 'no-scrollbar');
                 details.classList.add('h-0', 'overflow-hidden');
+                navBtn.classList.add('hidden');
                 text.textContent = 'TAP TO EXPAND';
             }
+        }
+
+        // Simulated Navigation Demo
+        let navInterval = null;
+        function startNavigationDemo() {
+            if (routeCoordinates.length === 0) return;
+            
+            // UI Feedback
+            const btn = document.getElementById('btn-start-nav');
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Navigating...`;
+            btn.classList.replace('bg-brand', 'bg-safe');
+            
+            // Audio Feedback (HTML5 synthesis)
+            if ('speechSynthesis' in window) {
+                const msg = new SpeechSynthesisUtterance("Starting safe navigation mode. Stay on the highlighted blue route.");
+                window.speechSynthesis.speak(msg);
+            }
+
+            // Collapse sheet to see map
+            if (sheetExpanded) toggleBottomSheet();
+
+            // Animate Marker
+            let step = 0;
+            if (navInterval) clearInterval(navInterval);
+            
+            navInterval = setInterval(() => {
+                if (step >= routeCoordinates.length) {
+                    clearInterval(navInterval);
+                    btn.innerHTML = `<i class="fa-solid fa-check"></i> Arrived Safely`;
+                    if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance("You have arrived safely."));
+                    return;
+                }
+                
+                const coord = routeCoordinates[step];
+                startMarker.setLatLng(coord);
+                map.panTo(coord, { animate: true, duration: 0.5 });
+                
+                // Keep moving
+                step += 3; // jump 3 coords at a time for speed
+            }, 600);
         }
 
         async function initRoutes(endCoord = pg, waypoints = [police, market]) {
@@ -493,6 +537,7 @@
             // Fetch Safe Route First
             const safeRouteData = await fetchRealRoute(currentStart, endCoord, waypoints, '#3b82f6', null, 7); // Brand Blue
             safeRouteLayer = safeRouteData.layer;
+            routeCoordinates = safeRouteData.latlngs || [];
             safeRouteLayer.addTo(map);
 
             // Immediately Update Dynamic UI for ETA so it doesn't wait for shortcut
@@ -604,7 +649,7 @@
         // -----------------------------------------------------------
         const demoLocations = [
             { name: "Trinayan Boys PG", coords: [91.6615, 26.1438], type: "PG", icon: "fa-bed" },
-            { name: "Rupalaya Girls PG", coords: [91.6610, 26.1460], type: "PG", icon: "fa-bed" },
+            { name: "Rupalaya Girl's PG", coords: [91.65536, 26.140224], type: "PG", icon: "fa-bed" },
             { name: "Assam Engineering College (AEC)", coords: [91.6565, 26.1415], type: "College", icon: "fa-graduation-cap" },
             { name: "AEC Daily Market", coords: [91.6640, 26.1430], type: "Market", icon: "fa-store" },
             { name: "Mon Jai Point", coords: [91.6625, 26.1420], type: "Restaurant", icon: "fa-utensils" },
