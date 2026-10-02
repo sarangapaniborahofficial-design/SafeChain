@@ -25,7 +25,7 @@ export default function GuardianView() {
       socket.emit('join_tracking_room', id);
     });
 
-    socket.on('location_update', (data) => {
+    socket.on('location_update', (data: any) => {
       setLiveData({
         lat: data.location.lat,
         lng: data.location.lng,

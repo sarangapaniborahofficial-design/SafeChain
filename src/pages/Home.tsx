@@ -382,7 +382,7 @@ export default function Home() {
           ref={mapRef}
           mapboxAccessToken={MAPBOX_TOKEN}
           {...viewState}
-          onMove={evt => setViewState(evt.viewState)}
+          onMove={(evt: any) => setViewState(evt.viewState)}
           onClick={onMapClick}
           mapStyle={mapStyle}
           attributionControl={false}
