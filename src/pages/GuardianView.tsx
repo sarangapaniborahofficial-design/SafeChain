@@ -60,7 +60,7 @@ export default function GuardianView() {
               <ShieldAlert size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-black text-dark leading-none mb-1">ASTU Guardian Command</h1>
+              <h1 className="text-xl font-black text-dark leading-none mb-1">SafeChain Guardian Command</h1>
               <p className="text-sm font-semibold text-gray-500">Live Tracking Session: <span className="font-mono text-gray-800">{id}</span></p>
             </div>
           </div>

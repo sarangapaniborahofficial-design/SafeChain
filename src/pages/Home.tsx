@@ -73,7 +73,7 @@ export default function Home() {
 
   const dispatchSOS = async (target: 'police' | 'contacts') => {
     setSosLoading(target);
-    const token = localStorage.getItem('navshield_token');
+    const token = localStorage.getItem('safechain_token');
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/sos/dispatch`, {
         method: 'POST',

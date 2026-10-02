@@ -6,7 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('navshield_token');
+  const token = localStorage.getItem('safechain_token');
   if (!token) return <Navigate to="/login" replace />;
   return children;
 };

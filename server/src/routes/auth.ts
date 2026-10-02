@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../db';
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_navshield';
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_safechain';
 
 router.post('/register', async (req, res) => {
   const { name, phone, password } = req.body;

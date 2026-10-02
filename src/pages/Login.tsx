@@ -22,8 +22,8 @@ export default function Login() {
       const data = await res.json();
       
       if (res.ok) {
-        localStorage.setItem('navshield_token', data.token);
-        localStorage.setItem('navshield_user', JSON.stringify(data.user));
+        localStorage.setItem('safechain_token', data.token);
+        localStorage.setItem('safechain_user', JSON.stringify(data.user));
         navigate('/');
       } else {
         setError(data.error || 'Login failed');
@@ -79,8 +79,8 @@ export default function Login() {
           <button 
             type="button" 
             onClick={() => {
-              localStorage.setItem('navshield_token', 'guest_bypass_token');
-              localStorage.setItem('navshield_user', JSON.stringify({ id: 'guest', name: 'Guest User', phone: 'N/A' }));
+              localStorage.setItem('safechain_token', 'guest_bypass_token');
+              localStorage.setItem('safechain_user', JSON.stringify({ id: 'guest', name: 'Guest User', phone: 'N/A' }));
               navigate('/');
             }}
             className="w-full bg-gray-100 text-gray-600 font-bold py-3.5 rounded-xl hover:bg-gray-200 transition"

@@ -22,8 +22,8 @@ export default function Register() {
       const data = await res.json();
       
       if (res.ok) {
-        localStorage.setItem('navshield_token', data.token);
-        localStorage.setItem('navshield_user', JSON.stringify(data.user));
+        localStorage.setItem('safechain_token', data.token);
+        localStorage.setItem('safechain_user', JSON.stringify(data.user));
         navigate('/');
       } else {
         setError(data.error || 'Registration failed');
