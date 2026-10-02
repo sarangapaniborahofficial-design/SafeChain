@@ -1,6 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-dark: #211f26;
+  --color-brand: #00ace2;
+  --color-alert: #cd4f75;
+  --color-safe: #10b981;
+}
 
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {

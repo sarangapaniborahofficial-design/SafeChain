@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Search, MapPin, Bell, Moon, TriangleAlert, Building, Users, Map as MapIcon, Home, User, LayoutGrid, LocationArrow, Spinner } from 'lucide-react';
+import { Search, MapPin, Bell, Moon, TriangleAlert, Building, Users, Map as MapIcon, Home, User, LayoutGrid, Navigation } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -79,7 +79,6 @@ export default function App() {
   const [sosLoading, setSosLoading] = useState<'police' | 'contacts' | null>(null);
   
   const [navigating, setNavigating] = useState(false);
-  const [navStep, setNavStep] = useState(0);
 
   // Routing Effect
   useEffect(() => {
@@ -103,7 +102,6 @@ export default function App() {
       
       // Reset navigation if active
       setNavigating(false);
-      setNavStep(0);
       setCurrentStart(astu); // reset to ASTU for demo purposes
     }
     fetchRoutes();
@@ -113,18 +111,16 @@ export default function App() {
   useEffect(() => {
     let interval: any;
     if (navigating && safeRoute) {
+      let currentStep = 0;
       interval = setInterval(() => {
-        setNavStep(prev => {
-          const next = prev + 3;
-          if (next >= safeRoute.latlngs.length) {
-            clearInterval(interval);
-            setNavigating(false);
-            if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance("You have arrived safely."));
-            return prev;
-          }
-          setCurrentStart(safeRoute.latlngs[next]);
-          return next;
-        });
+        currentStep += 3;
+        if (currentStep >= safeRoute.latlngs.length) {
+          clearInterval(interval);
+          setNavigating(false);
+          if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance("You have arrived safely."));
+          return;
+        }
+        setCurrentStart(safeRoute.latlngs[currentStep]);
       }, 600);
     }
     return () => clearInterval(interval);
@@ -354,7 +350,7 @@ export default function App() {
               setNavigating(true);
               if ('speechSynthesis' in window) window.speechSynthesis.speak(new SpeechSynthesisUtterance("Starting safe navigation mode."));
             }} className={cn("w-full mt-3 font-bold py-3.5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2", sheetExpanded ? "block" : "hidden", navigating ? "bg-safe text-white" : "bg-brand text-white hover:bg-blue-600")}>
-              {navigating ? "Navigating..." : <><LocationArrow size={18} /> Start Safe Navigation</>}
+              {navigating ? "Navigating..." : <><Navigation size={18} /> Start Safe Navigation</>}
             </button>
           </div>
         </div>
