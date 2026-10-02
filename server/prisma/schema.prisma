@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  password  String
+  contacts  EmergencyContact[]
+  sessions  SOSSession[]
+  createdAt DateTime @default(now())
+}
+
+model EmergencyContact {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model SOSSession {
+  id          String   @id @default(uuid())
+  trackingId  String   @unique // The ID shared via WebSocket link
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  target      String   // 'police' or 'contacts'
+  active      Boolean  @default(true)
+  locations   LocationUpdate[]
+  createdAt   DateTime @default(now())
+}
+
+model LocationUpdate {
+  id          String   @id @default(uuid())
+  sessionId   String
+  session     SOSSession @relation(fields: [sessionId], references: [id])
+  lat         Float
+  lng         Float
+  battery     String?
+  speed       String?
+  timestamp   DateTime @default(now())
+}
+
+model HazardReport {
+  id          String   @id @default(uuid())
+  type        String   // "Unlit Street", "Stray Dogs"
+  lat         Float
+  lng         Float
+  severity    String   // "high", "medium", "low"
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+}
