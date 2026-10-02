@@ -57,6 +57,22 @@ export default function Home() {
   const [hazards, setHazards] = useState<any[]>([]);
   const [hazardModal, setHazardModal] = useState<{ lat: number, lng: number } | null>(null);
 
+  // Ask for user's real GPS location on load
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { longitude, latitude } = position.coords;
+          setCurrentStart([longitude, latitude]);
+          setViewState(prev => ({ ...prev, longitude, latitude }));
+        },
+        (error) => {
+          console.error("Error getting location. Falling back to default.", error);
+        }
+      );
+    }
+  }, []);
+
   // Fetch active hazards from the backend on load
   useEffect(() => {
     async function loadHazards() {
@@ -164,7 +180,6 @@ export default function Home() {
       setShortcutRoute(shortData);
       
       setNavigating(false);
-      setCurrentStart(astu); 
       
       if (safeData?.geometry && mapRef.current) {
         // Automatically fit bounds to the route
