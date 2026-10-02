@@ -6,7 +6,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { Activity, ShieldAlert, Battery, Zap, Phone, Car } from 'lucide-react';
 import { io } from 'socket.io-client';
 
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiZXgxbGUiLCJhIjoiY211cGY4czV1MDBtaDJ5c2JwMW0yZTZnNCJ9.OtXMFX7PqUKULSUAAnUBQg';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 export default function GuardianView() {
   const { id } = useParams<{ id: string }>();

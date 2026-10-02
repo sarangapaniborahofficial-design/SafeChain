@@ -15,7 +15,7 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 // Initialize Socket.io (does not connect until SOS is pressed)
 const socket = io(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}`, { autoConnect: false });
 
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiZXgxbGUiLCJhIjoiY211cGY4czV1MDBtaDJ5c2JwMW0yZTZnNCJ9.OtXMFX7PqUKULSUAAnUBQg';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 // Coordinates as [longitude, latitude] for Mapbox consistency
 const astu: [number, number] = [91.6591, 26.1380];
